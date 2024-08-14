@@ -62,12 +62,13 @@ public class ProductServiceImpl implements ProductService {
     public Mono<Product> updateProductPrice(int code, double price) {
         return getProductByCode(code)
                 .doOnNext(p -> {
-                    var product = products.stream().filter(u -> u.getCode() == code).findFirst();
-                    if (product.isEmpty())
-                        throw new RuntimeException("Product not found");
-
-                    product.get().setPrice(price);
+                    updateProduct(code, price);
                 });
+    }
+
+    private void updateProduct(int code, double price) {
+        var product = products.stream().filter(u -> u.getCode() == code).findFirst();
+        product.get().setPrice(price);
     }
 
 }
