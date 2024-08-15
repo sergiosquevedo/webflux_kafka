@@ -54,19 +54,17 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public Mono<Void> deleteProduct(int code) {
         return getProductByCode(code)
-                .doOnSuccess(p -> products.removeIf(r -> r.getCode() == code))
+                .doOnNext(p -> products.removeIf(r -> r.getCode() == code))
                 .then();
     }
 
     @Override
     public Mono<Product> updateProductPrice(int code, double price) {
         return getProductByCode(code)
-                .doOnNext(p -> {
-                    updateProduct(code, price);
-                });
+                .doOnNext(p -> getProduct(code, price));
     }
 
-    private void updateProduct(int code, double price) {
+    private void getProduct(int code, double price) {
         var product = products.stream().filter(u -> u.getCode() == code).findFirst();
         product.get().setPrice(price);
     }
