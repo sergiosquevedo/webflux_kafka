@@ -14,17 +14,27 @@
 			let items = "<thead><tr><th>Nombre</th><th>Precio</th><th>Stock</th><th></th></tr></thead>";
 			$("#products").html(items);
 			let source = new EventSource(url);
-			source.addEventListener("message", function (e) {
+
+			source.onmessage = (e) => {
+				console.log(e);
 				let response = JSON.parse(e.data);
 				let row = "<tr><td>" + response.name + "</td><td>" + response.price + "</td><td>" + response.stock + "</td><td><a href='#' onclick='deleteItem(" + response.code + ")'>Eliminar</a><td></tr>";
 				$("#products").html($("#products").html() + row);
-			});
-			source.addEventListener("error", function (e) {
-				source.close();
-			});
+			}
+
+			source.onerror = (e) => {
+				if (e.eventPhase == EventSource.CLOSED) {
+					console.log(e);
+					source.close();
+				}else{
+					console.log("Unexpected error");
+					console.log(e);
+				}
+			}
 		}
+
 		function deleteItem(code) {
-			let url = "http://localhost:8080/product/"+ code;
+			let url = "http://localhost:8080/product/" + code;
 			$.ajax({
 				url: url,
 				method: "delete",
