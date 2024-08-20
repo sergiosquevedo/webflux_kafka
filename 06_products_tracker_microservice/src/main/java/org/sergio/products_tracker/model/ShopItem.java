@@ -6,6 +6,16 @@ public class ShopItem {
     private double price;
     private String shop;
 
+    public ShopItem() {
+    }
+
+    public ShopItem(String name, String category, double price, String shop) {
+        this.name = name;
+        this.category = category;
+        this.price = price;
+        this.shop = shop;
+    }
+
     public String getName() {
         return name;
     }
