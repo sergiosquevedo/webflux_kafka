@@ -17,13 +17,20 @@ public class SearchProductController {
         this.searchProductsService = searchProductsService;
     }
 
+    @GetMapping(value = "/")
+    public String searchMainPage(){
+        return "searchMainPage";
+    }
+
     @GetMapping(value = "/searchProductByMaxPrice")
     public String searchProductByMaxPrice(@RequestParam("price") double maxPrice, Model model) {
+        var searchResponse = searchProductsService.searchProductByMaxPrice(maxPrice);
+        
         var contextVariable = new ReactiveDataDriverContextVariable(
-                searchProductsService.searchProductByMaxPrice(maxPrice), BUFFER_SIZE);
+                searchResponse, BUFFER_SIZE);
 
         model.addAttribute("searchProductByMaxPriceResponse", contextVariable);
 
-        return "searchProductByMaxPriceResponse";
+        return "searchProductResponse";
     }
 }
