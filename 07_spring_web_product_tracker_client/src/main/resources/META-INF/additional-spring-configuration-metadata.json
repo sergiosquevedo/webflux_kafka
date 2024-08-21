@@ -1,0 +1,5 @@
+{"properties": [{
+  "name": "products.tracker.service.url",
+  "type": "java.lang.String",
+  "description": "The url where the product tracker service is listening"
+}]}
