@@ -23,7 +23,7 @@ public class SecurityConfig {
     public MapReactiveUserDetailsService users() throws Exception{
         List<UserDetails> users = List.of(
                 User.withUsername("user1")
-                        .password("{noop} user1") // {noop} <- indicates to Spring that the password is not encrypted
+                        .password("{noop}user1") // {noop} <- indicates to Spring that the password is not encrypted
                         .roles("USER")
                         .build(),
                 User.withUsername("admin1")
