@@ -1,10 +1,11 @@
 package org.sergio.reactive_product_service.service;
 
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-
+import org.sergio.reactive_product_service.exception.ProductAlreadyExistException;
 import org.sergio.reactive_product_service.model.Product;
+import org.sergio.reactive_product_service.persistence.ProductEntity;
+import org.sergio.reactive_product_service.persistence.ProductsRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import reactor.core.publisher.Flux;
@@ -12,61 +13,70 @@ import reactor.core.publisher.Mono;
 
 @Service
 public class ProductServiceImpl implements ProductService {
+    private final Logger logger = LoggerFactory.getLogger(ProductServiceImpl.class);
 
-    private static List<Product> products = new ArrayList<>(
-            List.of(new Product(100, "Azucar", "Alimentación", 1.10, 20),
-                    new Product(101, "Leche", "Alimentación", 1.20, 15),
-                    new Product(102, "Jabón", "Limpieza", 0.89, 30),
-                    new Product(103, "Mesa", "Hogar", 125, 4),
-                    new Product(104, "Televisión", "Hogar", 650, 10),
-                    new Product(105, "Huevos", "Alimentación", 2.20, 30),
-                    new Product(106, "Fregona", "Limpieza", 3.40, 6),
-                    new Product(107, "Detergente", "Limpieza", 8.7, 12)));
+    private final ProductsRepository productsRepository;
+
+    public ProductServiceImpl(ProductsRepository productsRepository) {
+        this.productsRepository = productsRepository;
+    }
 
     @Override
     public Flux<Product> getCatalog() {
-        return Flux.fromIterable(products)
-                .delayElements(Duration.ofSeconds(1));
+        return productsRepository.findAll()
+                .map(this::mapProductEntityIntoProduct);
     }
 
     @Override
     public Flux<Product> getProductByCategory(String category) {
-        return getCatalog().filter(p -> p.getCategory().equals(category));
+        return productsRepository.findByCategory(category)
+                .map(this::mapProductEntityIntoProduct);
     }
 
     @Override
     public Mono<Product> getProductByCode(int code) {
-        return getCatalog().filter(p -> p.getCode() == code).next();
+        return productsRepository.findById(code)
+                .map(this::mapProductEntityIntoProduct);
     }
 
     @Override
     public Mono<Product> saveProduct(Product product) {
-        return getProductByCode(product.getCode())
-                .doOnSuccess(p -> {
-                    if (p != null)
-                        throw new RuntimeException("Product already exist");
+        return isProductExist(product.getCode())
+                .filter(productExist -> !productExist)
+                .switchIfEmpty(Mono.error(ProductAlreadyExistException::new))
+                .map(p -> product)
+                .map(p -> new ProductEntity(p.getCode(), p.getName(), p.getCategory(), p.getPrice(), p.getStock()))
+                .doOnNext(p -> logger.info("Saving new product: " + p.toString()))
+                .flatMap(productsRepository::save)
+                .doOnNext(p -> logger.info("Product saved properly"))
+                .map(p -> product);
+    }
 
-                    products.add(product);
-                })
-                .thenReturn(product);
+    private Mono<Boolean> isProductExist(int code) {
+        return productsRepository.findById(code)
+                .map(product -> true)
+                .switchIfEmpty(Mono.just(false));
     }
 
     @Override
     public Mono<Void> deleteProduct(int code) {
-        return getProductByCode(code)
-                .doOnNext(p -> products.removeIf(r -> r.getCode() == code))
+        return productsRepository.findById(code)
+                .doOnNext(p -> logger.info("Deleting product with code " + p.getCode()))
+                .flatMap(p -> productsRepository.deleteById(code))
                 .then();
+
     }
 
     @Override
     public Mono<Product> updateProductPrice(int code, double price) {
-        return getProductByCode(code)
-                .doOnNext(p -> getProduct(code, price));
+        return productsRepository.findById(code)
+                .doOnNext(p -> logger.info("Updating product with code" + code))
+                .doOnNext(p -> p.setPrice(price))
+                .flatMap(productsRepository::save)
+                .map(this::mapProductEntityIntoProduct);
     }
 
-    private void getProduct(int code, double price) {
-        var product = products.stream().filter(u -> u.getCode() == code).findFirst();
-        product.get().setPrice(price);
+    private Product mapProductEntityIntoProduct(ProductEntity p) {
+        return new Product(p.getCode(), p.getName(), p.getCategory(), p.getPrice(), p.getStock());
     }
-
 }
