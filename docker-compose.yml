@@ -19,6 +19,8 @@ services:
     restart: always
     container_name: mongo
     shm_size: 512
+    ports:
+      - 27017:27017
     volumes:
       - ./mongodb_init.js:/docker-entrypoint-initdb.d/mongodb_init.js:ro
 
