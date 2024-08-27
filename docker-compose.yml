@@ -13,3 +13,22 @@ services:
       POSTGRES_DB: webflux_kafka
     volumes:
       - ./postrgres_init.sql:/docker-entrypoint-initdb.d/postrgres_init.sql:ro
+
+  mongo:
+    image: mongo:7.0.14
+    restart: always
+    container_name: mongo
+    shm_size: 512
+    volumes:
+      - ./mongodb_init.js:/docker-entrypoint-initdb.d/mongodb_init.js:ro
+
+  mongo-express:
+    image: mongo-express:1.0.2-18
+    restart: always
+    container_name: mongo-express
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://mongo:27017/
+    depends_on:
+      - mongo
