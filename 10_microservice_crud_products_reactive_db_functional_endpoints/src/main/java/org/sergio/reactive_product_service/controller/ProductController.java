@@ -1,24 +1,19 @@
 package org.sergio.reactive_product_service.controller;
 
+import org.sergio.reactive_product_service.exception.ProductAlreadyExistException;
 import org.sergio.reactive_product_service.model.Product;
 import org.sergio.reactive_product_service.service.ProductService;
-import org.springframework.web.bind.annotation.RestController;
-
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.reactive.function.server.RequestPredicates;
+import org.springframework.web.reactive.function.server.RouterFunction;
+import org.springframework.web.reactive.function.server.RouterFunctions;
+import org.springframework.web.reactive.function.server.ServerResponse;
+import org.springframework.web.server.ResponseStatusException;
 
-@RestController
+@Configuration
 public class ProductController {
     private final ProductService productService;
 
@@ -26,39 +21,55 @@ public class ProductController {
         this.productService = productService;
     }
 
-    @GetMapping("/product")
-    public Flux<Product> getProducts() {
-        return productService.getCatalog();
-    }
-
-    @GetMapping("/product/category/{category}")
-    public Flux<Product> getProductByCategory(@PathVariable String category) {
-        return productService.getProductByCategory(category);
-    }
-
-    @GetMapping("/product/{code}")
-    public Mono<ResponseEntity<Product>> getProductByCode(@PathVariable int code) {
-        return productService.getProductByCode(code)
-                .map(response -> new ResponseEntity<>(response, HttpStatus.OK))
-                .switchIfEmpty(Mono.just(new ResponseEntity<>(HttpStatus.NOT_FOUND)));
-    }
-
-    @PostMapping(value = "/product", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Mono<ResponseEntity<Product>> saveProduct(@RequestBody Product product) {
-        return productService.saveProduct(product)
-                .map(response -> new ResponseEntity<>(response, HttpStatus.CREATED))
-                .onErrorReturn(new ResponseEntity<>(HttpStatus.CONFLICT));
-    }
-
-    @DeleteMapping(value = "/product/{code}")
-    public Mono<Void> deleteProduct(@PathVariable int code) {
-        return productService.deleteProduct(code);
-    }
-
-    @PutMapping("/product/{code}")
-    public Mono<ResponseEntity<Product>> updateProduct(@PathVariable int code, @RequestParam("price") double price) {
-        return productService.updateProductPrice(code, price)
-                .map(response -> new ResponseEntity<>(response, HttpStatus.OK))
-                .switchIfEmpty(Mono.just(new ResponseEntity<>(HttpStatus.NOT_FOUND)));
+    @Bean
+    public RouterFunction<ServerResponse> productsRouter() {
+        return RouterFunctions.route(
+                RequestPredicates.GET("/product"),
+                request -> ServerResponse.ok().body(productService.getCatalog(), Product.class))
+                .andRoute(
+                        RequestPredicates.GET("/product/category/{category}"),
+                        request -> ServerResponse
+                                .ok()
+                                .contentType(MediaType.TEXT_EVENT_STREAM)
+                                .body(productService.getProductByCategory(request.pathVariable("category")),
+                                        Product.class))
+                .andRoute(
+                        RequestPredicates.GET("/product/{code}"),
+                        request ->
+                        // Below, we are getting the path variable from the request. Keep in mind that
+                        // if the code is not an integer, this route
+                        // will return a Internal Server Exception (500). We are focusing in the
+                        // Functional Routers, we are not going to sanitize the
+                        // request provided by the service's consumer
+                        productService.getProductByCode(Integer.valueOf(request.pathVariable("code"))) // UNSAFE!!
+                                .flatMap(response -> ServerResponse
+                                        .ok()
+                                        .contentType(MediaType.TEXT_EVENT_STREAM)
+                                        .bodyValue(response))
+                                .switchIfEmpty(ServerResponse.notFound().build()))
+                .andRoute(
+                        RequestPredicates.POST("/product"),
+                        request -> request.bodyToMono(Product.class)
+                                .flatMap(product -> ServerResponse.status(HttpStatus.CREATED)
+                                        .contentType(MediaType.TEXT_EVENT_STREAM)
+                                        .body(productService.saveProduct(product)
+                                                .onErrorMap(
+                                                        ProductAlreadyExistException.class,
+                                                        e -> new ResponseStatusException(HttpStatus.CONFLICT)),
+                                                Product.class)))
+                .andRoute(
+                        RequestPredicates.DELETE("/product/{code}"),
+                        request -> ServerResponse.ok()
+                                .build(productService.deleteProduct(Integer.valueOf(request.pathVariable("code")))))
+                .andRoute(
+                        RequestPredicates.PUT("/product/{code}"),
+                        request -> productService.updateProductPrice(
+                                Integer.valueOf(request.pathVariable("code")), // UNSAFE!!
+                                Double.valueOf(request.queryParam("price").get())) // UNSAFE!!
+                                .flatMap(response -> ServerResponse
+                                        .ok()
+                                        .contentType(MediaType.TEXT_EVENT_STREAM)
+                                        .bodyValue(response))
+                                .switchIfEmpty(ServerResponse.notFound().build()));
     }
 }
