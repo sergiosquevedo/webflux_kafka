@@ -2,6 +2,8 @@ package org.sergio.products_orders.service;
 
 import org.sergio.products_orders.model.ProductOrder;
 
+import reactor.core.publisher.Mono;
+
 public interface ProductOrderService {
-    void createNewProductOrder(ProductOrder productOrder);
+    Mono<ProductOrder> createNewProductOrder(ProductOrder productOrder);
 }
