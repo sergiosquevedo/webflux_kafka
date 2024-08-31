@@ -1,0 +1,12 @@
+{"properties": [
+  {
+    "name": "org.sergio.products.topic",
+    "type": "java.lang.String",
+    "description": "Describes the product topic. This topic is managed by Kafka'"
+  },
+  {
+    "name": "org.sergio.products.group.stock",
+    "type": "java.lang.String",
+    "description": "Define which group product listener belongs to'"
+  }
+]}
