@@ -1,5 +1,6 @@
 package org.sergio.products_orders.producers;
 
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.dozer.DozerBeanMapper;
 import org.sergio.products_orders.error.BrokerRegistrationException;
 import org.sergio.products_orders.model.ProductOrder;
@@ -8,8 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
-
-import reactor.core.publisher.Mono;
 
 @Component
 public class ProductOrderPublisherImpl implements ProductOrderPublisher {

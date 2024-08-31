@@ -19,13 +19,17 @@ public class ProductEntity implements Persistable<Integer> {
     public ProductEntity() {
     }
 
+    public ProductEntity(boolean isNewProduct, int code, String name, String category, double price, int stock) {
+            this.code = code;
+            this.name = name;
+            this.category = category;
+            this.price = price;
+            this.stock = stock;
+            this.newProduct = isNewProduct;
+    }
+
     public ProductEntity(int code, String name, String category, double price, int stock) {
-        this.code = code;
-        this.name = name;
-        this.category = category;
-        this.price = price;
-        this.stock = stock;
-        this.newProduct = true;
+        this(true, code, name, category, price, stock);
     }
 
     @Override
