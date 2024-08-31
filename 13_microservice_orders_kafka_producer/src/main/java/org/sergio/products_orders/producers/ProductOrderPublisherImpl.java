@@ -26,7 +26,7 @@ public class ProductOrderPublisherImpl implements ProductOrderPublisher {
 
     @Override
     public void registerOrder(ProductOrder productOrder) throws BrokerRegistrationException {
-        var kafkaBrokerResponse = kafkaTemplate.send("my-test-topic",
+        var kafkaBrokerResponse = kafkaTemplate.send("org.sergio.products.topic",
                 dozerMapper.map(productOrder, ProductOrderMessage.class));
 
         kafkaBrokerResponse.whenCompleteAsync((response, error) -> {
