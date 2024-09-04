@@ -1,28 +1,31 @@
-package org.sergio.products_shipping.repository.model;
+package org.sergio.products_shipping.model;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.relational.core.mapping.Column;
-import org.springframework.data.relational.core.mapping.Table;
-
-@Table(value = "shipping")
-public class ShippingEntity {
-    @Id
-    @Column("id_shipping")
-    private UUID idShipping;
+public class Shipping {
+    private String id;
     private String product;
-    @Column("date_shipping")
     private LocalDateTime dateShipping;
     private String address;
     private String status;
+    
+    public Shipping(){
 
-    public UUID getIdShipping() {
-        return idShipping;
     }
-    public void setIdShipping(UUID idShipping) {
-        this.idShipping = idShipping;
+
+    public Shipping(String id, String product, LocalDateTime dateShipping, String address, String status) {
+        this.id = id;
+        this.product = product;
+        this.dateShipping = dateShipping;
+        this.address = address;
+        this.status = status;
+    }
+
+    public String getId() {
+        return id;
+    }
+    public void setId(String id) {
+        this.id = id;
     }
     public String getProduct() {
         return product;
@@ -48,4 +51,6 @@ public class ShippingEntity {
     public void setStatus(String status) {
         this.status = status;
     }
+
+    
 }

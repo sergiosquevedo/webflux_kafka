@@ -8,7 +8,7 @@ import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 
 import reactor.core.publisher.Flux;
 
-public interface ProductShipping extends ReactiveCrudRepository<ShippingEntity, UUID>{
+public interface ProductShippingRepository extends ReactiveCrudRepository<ShippingEntity, UUID>{
     @Query("select * from shipping where status='pending'")
     Flux<ShippingEntity> getByPendingStatus();
 }
