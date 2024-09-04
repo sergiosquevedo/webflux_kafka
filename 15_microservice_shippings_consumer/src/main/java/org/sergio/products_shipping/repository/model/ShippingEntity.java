@@ -4,11 +4,13 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 @Table(value = "shipping")
-public class ShippingEntity {
+public class ShippingEntity implements Persistable<UUID>{
     @Id
     @Column("id_shipping")
     private UUID idShipping;
@@ -18,9 +20,32 @@ public class ShippingEntity {
     private String address;
     private String status;
 
+    @Transient
+    private boolean isNewEntity;
+
     public UUID getIdShipping() {
         return idShipping;
     }
+
+    public ShippingEntity(UUID idShipping, String product, LocalDateTime dateShipping, String address, String status) {
+        this.idShipping = idShipping;
+        this.product = product;
+        this.dateShipping = dateShipping;
+        this.address = address;
+        this.status = status;
+        this.isNewEntity = true;
+    }
+
+    @Override
+    public UUID getId() {
+        return idShipping;
+    }
+
+    @Override
+    public boolean isNew() {
+       return isNewEntity;
+    }
+
     public void setIdShipping(UUID idShipping) {
         this.idShipping = idShipping;
     }
