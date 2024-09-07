@@ -1,0 +1,35 @@
+server:
+  port: 8000
+
+eureka:
+  client:
+    register-with-eureka: false
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+spring:
+    application:
+        name: reactive-gateway
+
+    cloud:
+        gateway:      
+            routes:
+            - id: shop1        
+              uri: lb://reactive-product-service
+              predicates:
+                - Path=/shop1/**
+              filters:
+                - RewritePath=/shop1/*, /
+            - id: shop2
+              uri: lb://reactive-product-service-shop2
+              predicates:
+                - Path=/shop2/**
+              filters:
+                - RewritePath=/shop2/*, /
+            default-filters:
+                - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+            globalcors:
+                corsConfigurations:
+                    '[/**]':
+                        allowedOrigins: "*"
+                        allowedMethods: "*"
+                        allowedHeaders: "*"
